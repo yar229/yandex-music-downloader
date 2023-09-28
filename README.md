@@ -86,11 +86,13 @@ usage: yandex-music-downloader [-h] [--hq] [--skip-existing] [--add-lyrics]
                                [--cover-resolution <Разрешение обложки>]
                                [--delay <Задержка>] [--stick-to-artist]
                                [--only-music] [--enable-caching]
-                               (--artist-id <ID исполнителя> | --album-id <ID альбома> | --track-id <ID трека> | --playlist-id <владелец плейлиста>/<тип плейлиста> | -u URL)
-                               [--unsafe-path] [--dir <Папка>]
-                               [--path-pattern <Паттерн>] --session-id <ID
-                               сессии> [--spravka <Spravka>]
+                               (--artist-id <ID исполнителя> | --album-id <ID альбома> | --track-id <ID трека> | --playlist-id <владелец плейлиста>/<тип плейлиста> | -url URL)
+                               [--unsafe-path] 
+                               [--dir <Папка>]
+                               [--path-pattern <Паттерн>] --session-id <ID сессии> 
+                               [--spravka <Spravka>]
                                [--user-agent <User-Agent>]
+                               [–-logpath LogPath]
 
 Загрузчик музыки с сервиса Яндекс.Музыка
 
@@ -112,6 +114,7 @@ options:
   --enable-caching      Включить кэширование. Данная опция полезна при
                         нестабильном интернете. (кэш хранится в папке
                         /tmp/ymd)
+  –-logpath              Сформировать лог в указанной папке
 
 ID:
   --artist-id <ID исполнителя>
@@ -149,6 +152,9 @@ ID:
 5. Прорешайте капчу
 6. Скопируйте значение куки `spravka` - передайте его как аргумент
    `--spravka`
+
+## Ошибка UnicodeEncodeError под Windows
+Перед запуском выполните `chcp 65001`
 
 ## Спасибо
 Разработчикам проекта [yandex-music-download](https://github.com/kaimi-io/yandex-music-download). Оттуда был взят [код хэширования](https://github.com/kaimi-io/yandex-music-download/blob/808443cb32be82e1f54b2f708884cb7c941b4371/src/ya.pl#L720).

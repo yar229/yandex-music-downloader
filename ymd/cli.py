@@ -1,11 +1,13 @@
 #!/bin/python3
 import argparse
 import datetime as dt
+from datetime import datetime
 import logging
 import re
 import sys
 import tempfile
 import time
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -26,7 +28,9 @@ ALBUM_RE = re.compile(r'album/(\d+)$')
 ARTIST_RE = re.compile(r'artist/(\d+)$')
 PLAYLIST_RE = re.compile(r'([\w\-._]+)/playlists/(\d+)$')
 
-logger = logging.getLogger('yandex-music-downloader')
+
+
+
 
 
 def args_playlist_id(arg: str) -> api.PlaylistId:
@@ -86,6 +90,11 @@ def main():
                               action='store_true',
                               help=argparse.SUPPRESS)
 
+    common_group.add_argument('--logpath',
+                            metavar='<Папка>',
+                            help=help_str('Log files folder'),
+                            type=Path)
+
     id_group_meta = parser.add_argument_group('ID')
     id_group = id_group_meta.add_mutually_exclusive_group(required=True)
     id_group.add_argument('--artist-id', metavar='<ID исполнителя>')
@@ -128,23 +137,40 @@ def main():
 
     args = parser.parse_args()
 
+
+
+    # Logging =============================================================================================================================
+    _log_format = '%(asctime)s\t%(levelname)s\t%(message)s'
     logging.basicConfig(
-        format='%(asctime)s |%(levelname)s| %(name)s: %(message)s',
-        datefmt='%H:%M:%S',
-        level=logging.DEBUG if args.debug else logging.ERROR)
+        datefmt = '%H:%M:%S',
+        format = _log_format,
+        level = logging.DEBUG if args.debug else logging.INFO
+    )
+    _logger = logging.getLogger('yandex-music-downloader')
+
+    #stream_handler = logging.StreamHandler()
+    #_logger.addHandler(stream_handler)
+    
+    if (args.logpath is not None):
+        file_handler = logging.FileHandler(os.path.join(args.logpath, f'yandex-music-downloader {datetime.now().strftime("%Y-%m-%d %H-%M-%S")}.log'), 'w', encoding = 'utf-8')
+        file_handler.setFormatter(logging.Formatter(_log_format))
+        file_handler.setLevel(logging.DEBUG if args.debug else logging.INFO)
+        _logger.addHandler(file_handler)
+    # End Logging =============================================================================================================================
+
+
+
 
     def response_hook(resp, **kwargs):
         del kwargs
-        if logger.isEnabledFor(logging.DEBUG):
-            target_headers = ['application/json', 'text/xml']
-            if any(h in resp.headers['Content-Type'] for h in target_headers):
-                logger.debug(resp.text)
+        #if logger.isEnabledFor(logging.DEBUG):
+        #    target_headers = ['application/json', 'text/xml']
+        #    if any(h in resp.headers['Content-Type'] for h in target_headers):
+        #        logger.debug(resp.text)
         if not resp.ok:
-            print(f'Код ошибки: {resp.status_code}')
+            _logger.error(f'Error code: {resp.status_code}')
             if resp.status_code == 400:
-                print(
-                    'Информация по устранению данной ошибки: https://github.com/llistochek/yandex-music-downloader#%D0%BE%D1%88%D0%B8%D0%B1%D0%BA%D0%B0-400'
-                )
+                _logger.error('Информация по устранению данной ошибки: https://github.com/llistochek/yandex-music-downloader#%D0%BE%D1%88%D0%B8%D0%B1%D0%BA%D0%B0-400')
             sys.exit(3)
         if not getattr(resp, 'from_cache', False):
             time.sleep(args.delay)
@@ -175,30 +201,26 @@ def main():
             args.playlist_id = PlaylistId(owner=match.group(1),
                                           kind=int(match.group(2)))
         else:
-            print('Параметер url указан в неверном формате')
+            _logger.error('url parameter wrong format')
             return 1
 
     if args.artist_id is not None:
         artist_info = api.get_artist_info(cached_session, args.artist_id)
         albums_count = 0
         for album in artist_info.albums:
-            if args.stick_to_artist and album.artists[
-                    0].name != artist_info.name:
-                print(f'Альбом "{album.title}" пропущен'
-                      ' из-за флага --stick-to-artist')
+            if args.stick_to_artist and album.artists[0].name != artist_info.name:
+                _logger.warning(f'Skipping album "{album.title}" cause of --stick-to-artist flag set')
                 continue
             if args.only_music and album.meta_type != 'music':
-                print(f'Альбом "{album.title}" пропущен'
-                      ' т.к. не является музыкальным')
+                _logger.warning(f'Skipping non-musical album "{album.title}" ')
                 continue
             full_album = api.get_full_album_info(cached_session, album.id)
             result_tracks.extend(full_album.tracks)
             albums_count += 1
-        print(artist_info.name)
-        print(f'Альбомов: {albums_count}')
+        _logger.info(f'Artist: {artist_info.name}, albums: {albums_count}')
     elif args.album_id is not None:
         album = api.get_full_album_info(cached_session, args.album_id)
-        print(album.title)
+        _logger.info(f'Album: {album.title}')
         result_tracks = album.tracks
     elif args.track_id is not None:
         result_tracks = [
@@ -207,9 +229,10 @@ def main():
     elif args.playlist_id is not None:
         result_tracks = api.get_playlist(cached_session, args.playlist_id)
 
-    print(f'Треков: {len(result_tracks)}')
+    _logger.info(f'Total tracks: {len(result_tracks)}')
 
     covers_cache: dict[str, bytes] = {}
+    cnt = 0
     for track in result_tracks:
         save_path = args.dir / core.prepare_track_path(args.path_pattern,
                                                        track, args.unsafe_path)
@@ -220,7 +243,8 @@ def main():
         if not save_dir.is_dir():
             save_dir.mkdir(parents=True)
 
-        print(f'Загружается {save_path}')
+        _logger.info(f'Loading track: {save_path}')
+         
         core.download_track(session=session,
                             track=track,
                             target_path=save_path,
@@ -229,3 +253,6 @@ def main():
                             embed_cover=args.embed_cover,
                             cover_resolution=args.cover_resolution,
                             covers_cache=covers_cache)
+        cnt += 1
+
+    _logger.info(f'Finished, tracks downloaded: {cnt}')
