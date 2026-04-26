@@ -4,14 +4,13 @@ import itertools
 import logging
 import re
 import time
-import typing
 from argparse import ArgumentTypeError
 from collections.abc import Callable, Generator, Iterable
 from pathlib import Path
 from typing import Optional, Union
 from urllib.parse import urlparse
 
-from yandex_music import Album, Playlist, Track
+from yandex_music import Album, Track
 
 from ymd import core
 
@@ -20,7 +19,7 @@ DEFAULT_DELAY = 0
 TRACK_RE = re.compile(r"track/(\d+)")
 ALBUM_RE = re.compile(r"album/(\d+)$")
 ARTIST_RE = re.compile(r"artist/(\d+)$")
-PLAYLIST_RE = re.compile(r"([\w\-._@]+)/playlists/(\d+)$")
+PLAYLIST_RE = re.compile(r"playlists/(.+)$")
 
 FETCH_PAGE_SIZE = 10
 
@@ -226,7 +225,7 @@ def main():
         elif match := TRACK_RE.search(path):
             args.track_id = match.group(1)
         elif match := PLAYLIST_RE.search(path):
-            args.playlist_id = match.group(1) + "/" + match.group(2)
+            args.playlist_id = match.group(1)
         else:
             print("Параметер url указан в неверном формате")
             return 1
@@ -297,8 +296,8 @@ def main():
         result_tracks = track
         total_track_count = 1
     elif args.playlist_id is not None:
-        user, kind = args.playlist_id.split("/")
-        playlist = typing.cast(Playlist, client.users_playlists(kind, user))
+        playlist = client.playlist(args.playlist_id)
+        assert playlist is not None
         total_track_count = playlist.track_count
 
         def playlist_tracks_gen() -> Generator[Track]:
