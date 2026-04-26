@@ -44,7 +44,7 @@ yandex-music-downloader --help
 ```
 
 ## Получение данных для авторизации
-https://yandex-music.readthedocs.io/en/main/token.html
+https://ym.marshal.dev/token/#implicit-oauth
 
 ## Примеры использования
 Во всех примерах замените `<Токен>` на ваш токен.
