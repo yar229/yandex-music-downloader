@@ -4,6 +4,10 @@ import itertools
 import logging
 import re
 import time
+import os
+import datetime as dt
+from datetime import datetime
+from datetime import datetime
 from argparse import ArgumentTypeError
 from collections.abc import Callable, Generator, Iterable
 from pathlib import Path
@@ -160,7 +164,7 @@ def main():
 
     common_group.add_argument('--logpath',
                             metavar='<Папка>',
-                            help=help_str('Log files folder'),
+                            help=show_default('Log files folder'),
                             type=Path)
 
     id_group_meta = parser.add_argument_group("ID")
