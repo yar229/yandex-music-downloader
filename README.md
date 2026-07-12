@@ -1,15 +1,18 @@
 # yandex-music-downloader
 
+> Внимание! В версии v3 был изменен способ авторизации и некоторые
+> аргументы. Смотрите [MIGRATION.md](MIGRATION.md) для получения информации
+> об изменениях
+
 ## Содержание
 1. [О программе](#О-программе)
 2. [Установка](#Установка)
 3. [Получение данных для авторизации](#Получение-данных-для-авторизации)
 4. [Примеры использования](#Примеры-использования)
 5. [Использование](#Использование)
-6. [Что делать при ошибке 400?](#Ошибка-400)
+6. [Уровни совместимости](#Уровни-совместимости)
 7. [Спасибо](#Спасибо)
 8. [Дисклеймер](#Дисклеймер)
-
 
 ## О программе
 Загрузчик, созданный вследствие наличия *фатального недостатка* в проекте [yandex-music-download](https://github.com/kaimi-io/yandex-music-download).
@@ -26,73 +29,56 @@
     - Название трека
     - Исполнитель
     - Дополнительные исполнители
-    - Год выпуска альбома
+    - Дата выпуска альбома
     - Обложка альбома
     - Название альбома
     - Текст песни (при использовании флага `--add-lyrics`)
+- Загрузка треков в lossless качестве
 - Поддержка паттерна для пути сохранения музыки
 
 ## Установка
 Для запуска скрипта требуется Python 3.9+
 ```
-pip install git+https://github.com/llistochek/yandex-music-downloader
+pip install -U https://github.com/llistochek/yandex-music-downloader/archive/main.zip
 yandex-music-downloader --help
 ```
 
 ## Получение данных для авторизации
-Войдите в свой Яндекс аккаунт, затем проделайте следующие шаги:
-
-### Для Google Chrome/Chromium
-1. Перейдите на сайт Яндекс Музыки (https://music.yandex.ru) 
-2. Нажмите F12
-3. Выберите вкладку Application
-4. Выберите пункт Cookies->https://music.yandex.ru
-5. Скопируйте значение куки (кликните на значение куки 2 раза -> Ctrl+C):
-    - Куки `Session_id` - это аргумент `--session-id`
-
-
-### Для Firefox
-1. Перейдите на сайт Яндекс Музыки (https://music.yandex.ru) 
-2. Нажмите F12
-3. Выберите вкладку Storage
-4. Выберите пункт Куки->https://music.yandex.ru
-5. Скопируйте значение куки (кликните на значение куки 2 раза -> Ctrl+C):
-    - Куки `Session_id` - это аргумент `--session-id`
-
+https://ym.marshal.dev/token/#implicit-oauth
 
 ## Примеры использования
-Во всех примерах замените `<ID сессии>` на значение куки `Session_id`
+Во всех примерах замените `<Токен>` на ваш токен.
 
-### Скачать все треки [Twenty One Pilots](https://music.yandex.ru/artist/792433) в высоком качестве
+### Скачать все треки [Arctic Monkeys](https://music.yandex.ru/artist/208167) в наилучшем качестве
 ```
-python3 main.py --session-id "<ID Сессии>" --hq --url "https://music.yandex.ru/artist/792433"
+yandex-music-downloader --token "<Токен>" --quality 2 --url "https://music.yandex.ru/artist/208167"
 ```
 
-### Скачать альбом [Nevermind](https://music.yandex.ru/album/294912) в высоком качестве, загружая тексты песен
+### Скачать альбом [Nevermind](https://music.yandex.ru/album/294912) в высоком качестве, загружая тексты песен в формате LRC (с временными метками)
 ```
-python3 main.py --session-id "<ID Сессии>" --hq --add-lyrics --url "https://music.yandex.ru/album/294912"
+yandex-music-downloader --token "<Токен>" --quality 1 --lyrics-format lrc --url "https://music.yandex.ru/album/294912"
 ```
 
 ### Скачать трек [Seven Nation Army](https://music.yandex.ru/album/11644078/track/6705392)
 ```
-python3 main.py --session-id "<ID Сессии>" --url "https://music.yandex.ru/album/11644078/track/6705392"
+yandex-music-downloader --token "<Токен>" --url "https://music.yandex.ru/album/11644078/track/6705392"
 ```
 
 ## Использование
-
 ```
-usage: yandex-music-downloader [-h] [--hq] [--skip-existing] [--add-lyrics]
+usage: yandex-music-downloader [-h] [--quality <Качество>] [--skip-existing]
+                               [--lyrics-format {none,text,lrc}]
                                [--embed-cover]
                                [--cover-resolution <Разрешение обложки>]
                                [--delay <Задержка>] [--stick-to-artist]
-                               [--only-music] [--enable-caching]
-                               (--artist-id <ID исполнителя> | --album-id <ID альбома> | --track-id <ID трека> | --playlist-id <владелец плейлиста>/<тип плейлиста> | -url URL)
-                               [--unsafe-path] 
-                               [--dir <Папка>]
-                               [--path-pattern <Паттерн>] --session-id <ID сессии> 
-                               [--spravka <Spravka>]
-                               [--user-agent <User-Agent>]
-                               [–-logpath LogPath]
+                               [--only-music]
+                               [--compatibility-level <Уровень совместимости>]
+                               [--timeout <Время ожидания>]
+                               [--tries <Количество попыток>]
+                               [--retry-delay <Задержка>]
+                               (--artist-id <ID исполнителя> | --album-id <ID альбома> | --track-id <ID трека> | --playlist-id <владелец плейлиста>/<тип плейлиста> | -u URL)
+                               [--unsafe-path] [--dir <Папка>]
+                               [--path-pattern <Паттерн>] --token <Токен>
 
 Загрузчик музыки с сервиса Яндекс.Музыка
 
@@ -100,21 +86,30 @@ options:
   -h, --help            show this help message and exit
 
 Общие параметры:
-  --hq                  Загружать треки в высоком качестве
+  --quality <Качество>  Качество трека:
+                        0 - Низкое (AAC 64kbps)
+                        1 - Оптимальное (AAC 192kbps)
+                        2 - Лучшее (FLAC)
+                        (по умолчанию: 0)
   --skip-existing       Пропускать уже загруженные треки
-  --add-lyrics          Загружать тексты песен
-  --embed-cover         Встраивать обложку в .mp3 файл
+  --lyrics-format {none,text,lrc}
+                        Формат текста песни (по умолчанию: none)
+  --embed-cover         Встраивать обложку в аудиофайл
   --cover-resolution <Разрешение обложки>
-                        по умолчанию: 400
-  --delay <Задержка>    Задержка между запросами, в секундах (по умолчанию: 3)
-  --stick-to-artist     Загружать альбомы, созданные только данным
-                        исполнителем
-  --only-music          Загружать только музыкальные альбомы (пропускать
-                        подкасты и аудиокниги)
-  --enable-caching      Включить кэширование. Данная опция полезна при
-                        нестабильном интернете. (кэш хранится в папке
-                        /tmp/ymd)
-  –-logpath              Сформировать лог в указанной папке
+                        Разрешение обложки (в пикселях). Передайте "original" для загрузки в оригинальном (наилучшем) разрешении (по умолчанию: 400)
+  --delay <Задержка>    Задержка между запросами, в секундах (по умолчанию: 0)
+  --stick-to-artist     Загружать альбомы, созданные только данным исполнителем
+  --only-music          Загружать только музыкальные альбомы (пропускать подкасты и аудиокниги)
+  --compatibility-level <Уровень совместимости>
+                        Уровень совместимости, от 0 до 1. См. README для подробного описания (по умолчанию: 1)
+
+Сетевые параметры:
+  --timeout <Время ожидания>
+                        Время ожидания ответа от сервера, в секундах. Увеличьте если возникают сетевые ошибки (по умолчанию: 20)
+  --tries <Количество попыток>
+                        Количество попыток при возникновении сетевых ошибок. 0 - бесконечное количество попыток (по умолчанию: 20)
+  --retry-delay <Задержка>
+                        Задержка между повторными запросами при сетевых ошибках (по умолчанию: 5)
 
 ID:
   --artist-id <ID исполнителя>
@@ -127,37 +122,33 @@ ID:
   --unsafe-path         Не очищать путь от недопустимых символов
   --dir <Папка>         Папка для загрузки музыки (по умолчанию: .)
   --path-pattern <Паттерн>
-                        Поддерживает следующие заполнители: #number, #artist,
-                        #album-artist, #title, #album, #year, #artist-id,
-                        #album-id, #track-id (по умолчанию: #album-
-                        artist/#album/#number - #title)
+                        Поддерживает следующие заполнители: #number, #track-artist, #album-artist, #title, #album, #year, #artist-id, #album-id, #track-id, #number-padded (по умолчанию: #album-artist/#album/#number - #title)
 
 Авторизация:
-  --session-id <ID сессии>
-  --spravka <Spravka>
-  --user-agent <User-Agent>
-                        по умолчанию: Mozilla/5.0 (X11; Linux x86_64)
-                        AppleWebKit/537.36 (KHTML, like Gecko)
-                        Chrome/106.0.0.0 Safari/537.36
+  --token <Токен>       Токен для авторизации. См. README для способов получения
 ```
-## Ошибка 400
-Ниже приведена инструкция по устранению ошибки 400.
-Перейдите на сайт Яндекс.Музыки, затем проделайте следующие шаги:
 
-### Для Firefox
-1. Нажмите на иконку замочка слева от адреса сайта
-2. Нажмите `Clear cookies and site data`
-3. Нажмите `Remove`
-4. Перезагрузите страницу
-5. Прорешайте капчу
-6. Скопируйте значение куки `spravka` - передайте его как аргумент
-   `--spravka`
+## Уровни совместимости
+Уровень совместимости позволяет отойти от стандарта тегов, которого
+придерживается библиотека mutagen. Сделано это для поддержки большего
+количества музыкальных плееров. Ниже подробно описаны все уровни.
 
-## Ошибка UnicodeEncodeError под Windows
-Перед запуском выполните `chcp 65001`
+### 0
+Стандартные теги mutagen.
+
+### 1
+Затрагиваемые форматы: `m4a`
+
+- Теги с несколькими значениями (`\xa9ART` и `aART`) устанвливаются с
+разделителем `;`. Пример: `Artist1; Artist2; Artist3`
+
 
 ## Спасибо
-Разработчикам проекта [yandex-music-download](https://github.com/kaimi-io/yandex-music-download). Оттуда был взят [код хэширования](https://github.com/kaimi-io/yandex-music-download/blob/808443cb32be82e1f54b2f708884cb7c941b4371/src/ya.pl#L720).
+- Разработчикам проекта [yandex-music-api](https://github.com/MarshalX/yandex-music-api)
+- @ArtemBay за [скрипт](https://github.com/MarshalX/yandex-music-api/issues/656#issuecomment-2306542725) получения ссылки на загрузку в lossless качестве
+- @keltecc за [метод дешифрования файлов](https://github.com/llistochek/yandex-music-downloader/issues/112#issuecomment-2812535100)
+- @leowerd за [корректные имена исполнителей](https://github.com/llistochek/yandex-music-downloader/issues/93#issuecomment-2960210879) при загрузке сборников
+
 
 ## Дисклеймер
 Данный проект является независимой разработкой и никак не связан с компанией Яндекс.
